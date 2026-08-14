@@ -31,12 +31,12 @@
   .nav-cta:hover { box-shadow:0 0 34px rgba(99,102,241,.7); }
 
   /* ===== Hero ===== */
-  .hero { position:relative; height:100vh; display:flex; align-items:center; justify-content:center; text-align:center; perspective:1000px; }
-  .hero-inner { transform-style:preserve-3d; width:min(1000px, 92vw); }
-  .layer { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; will-change:transform; }
+  .hero { position:relative; height:100vh; min-height:640px; display:flex; align-items:center; justify-content:center; text-align:center; perspective:1000px; padding:4rem 0; }
+  .hero-inner { transform-style:preserve-3d; width:min(1000px, 92vw); display:flex; flex-direction:column; align-items:center; }
+  .layer { position:relative; left:auto; right:auto; top:auto; bottom:auto; display:flex; align-items:center; justify-content:center; width:100%; will-change:transform; }
   .badge { display:inline-flex; align-items:center; gap:.45rem; padding:.42rem 1.05rem; border-radius:999px; font-size:.8rem;
            background:rgba(34,211,238,.1); border:1px solid rgba(34,211,238,.35); color:#67e8f9; margin-bottom:1.4rem; }
-  .title { font-size:clamp(2.3rem, 6.4vw, 5rem); font-weight:800; letter-spacing:-0.025em; line-height:1.08;
+  .title { font-size:clamp(2.2rem, 5.4vw, 4rem); font-weight:800; letter-spacing:-0.025em; line-height:1.12;
            background:linear-gradient(120deg,#5eead4,#38bdf8,#818cf8); -webkit-background-clip:text; background-clip:text; color:transparent;
            text-shadow:0 0 40px rgba(56,189,248,.22); }
   .title .plain { background:none; -webkit-text-fill-color:#f1f5fb; color:#f1f5fb; text-shadow:0 0 44px rgba(129,140,248,.35); }
@@ -151,10 +151,10 @@
     <div class="layer" data-depth="0.45">
       <div class="title"><span class="plain">54 % des candidats disparaissent</span><br>après l'offre.<br>La relance automatique les retient.</div>
     </div>
-    <div class="layer" data-depth="0.55" style="top:62%">
+    <div class="layer" data-depth="0.55">
       <div class="subtitle">Anti-Ghosting envoie vos relances au bon moment — email à J+2, email à J+5, SMS à J+9 — pour garder vos candidats en vie jusqu'à l'embauche. Sans ATS, sans Excel, sans y penser.</div>
     </div>
-    <div class="layer" data-depth="0.7" style="top:80%">
+    <div class="layer" data-depth="0.7">
       <div class="cta">
         <a class="btn btn-primary" href="app.html">Tester l'app gratuitement →</a>
         <a class="btn btn-ghost" href="#offres">Voir les tarifs</a>
