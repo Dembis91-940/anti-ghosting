@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Anti-Ghosting — l'app de suivi candidats : relances automatiques J+2 (email), J+5 (email), J+9 (SMS), pipeline visuel.">
+<title>Anti-Ghosting — App de suivi candidats</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Segoe UI', system-ui, -apple-system, sans-serif; background:#070b14; color:#e8ecf5; min-height:100vh; }
+  ::selection { background:rgba(56,189,248,.3); }
+
+  /* ===== Header ===== */
+  header { position:sticky; top:0; z-index:50; background:rgba(7,11,20,.92); backdrop-filter:blur(12px);
+           border-bottom:1px solid rgba(255,255,255,.07); padding:.8rem 1.6rem; display:flex; align-items:center; gap:1.2rem; flex-wrap:wrap; }
+  .brand { display:flex; align-items:center; gap:.55rem; font-weight:800; font-size:1.05rem; }
+  .brand .shield { width:28px; height:28px; border-radius:8px; background:linear-gradient(135deg,#22d3ee,#818cf8);
+                   display:inline-flex; align-items:center; justify-content:center; font-size:14px; box-shadow:0 0 16px rgba(34,211,238,.4); }
+  .brand span { color:#38bdf8; }
+  .tabs { display:flex; gap:.35rem; background:rgba(255,255,255,.05); padding:.3rem; border-radius:12px; }
+  .tab { padding:.5rem 1.1rem; border-radius:9px; border:0; background:transparent; color:#9fb0c9; font-size:.88rem; font-weight:600; cursor:pointer; font-family:inherit; }
+  .tab.active { background:linear-gradient(120deg,#0ea5e9,#6366f1); color:#fff; box-shadow:0 0 16px rgba(99,102,241,.4); }
+  .sim { margin-left:auto; display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; }
+  .sim label { font-size:.78rem; color:#7c8aa5; }
+  .sim input[type=date] { background:#0b1220; border:1px solid rgba(255,255,255,.14); color:#e8ecf5; border-radius:9px; padding:.42rem .6rem; font-size:.85rem; font-family:inherit; }
+  .sim .btn-today { background:rgba(34,211,238,.12); border:1px solid rgba(34,211,238,.35); color:#67e8f9; border-radius:9px;
+                    padding:.42rem .8rem; font-size:.8rem; font-weight:600; cursor:pointer; }
+  .sim .btn-today:hover { background:rgba(34,211,238,.22); }
+  .retour { color:#7dd3fc; text-decoration:none; font-size:.85rem; font-weight:600; }
+
+  main { max-width:1280px; margin:0 auto; padding:1.4rem 1.6rem 4rem; }
+
+  /* ===== Alerte relances dues ===== */
+  .alerte { display:none; align-items:flex-start; gap:.8rem; background:linear-gradient(90deg,rgba(34,211,238,.12),rgba(99,102,241,.12));
+            border:1px solid rgba(34,211,238,.4); border-radius:14px; padding:.95rem 1.15rem; margin-bottom:1.3rem; font-size:.9rem; }
+  .alerte .ico { font-size:1.2rem; }
+  .alerte b { color:#67e8f9; }
+  .alerte ul { margin:.4rem 0 0 1.2rem; color:#c8d6ea; }
+  .alerte ul li { margin:.15rem 0; }
+
+  /* ===== KPIs ===== */
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:.9rem; margin-bottom:1.5rem; }
+  .kpi { background:rgba(15,21,38,.8); border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:1.1rem 1.2rem; }
+  .kpi .k-label { color:#7c8aa5; font-size:.78rem; text-transform:uppercase; letter-spacing:.06em; }
+  .kpi .k-val { font-size:1.7rem; font-weight:800; margin-top:.3rem; background:linear-gradient(120deg,#7dd3fc,#a5b4fc); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .kpi .k-sub { color:#5b6b85; font-size:.75rem; margin-top:.2rem; }
+
+  /* ===== Formulaire ajout ===== */
+  .add { background:rgba(15,21,38,.85); border:1px solid rgba(255,255,255,.1); border-radius:18px; padding:1.4rem 1.5rem; margin-bottom:1.6rem; }
+  .add h3 { color:#dbeafe; font-size:1.02rem; margin-bottom:1rem; display:flex; align-items:center; gap:.5rem; }
+  .add-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:.8rem; }
+  .add label { display:block; font-size:.78rem; color:#9fb0c9; margin-bottom:.3rem; }
+  .add input, .add select { width:100%; padding:.7rem .85rem; border-radius:10px; border:1px solid rgba(255,255,255,.14);
+             background:#0b1220; color:#e8ecf5; font-size:.92rem; font-family:inherit; }
+  .add input:focus, .add select:focus { outline:none; border-color:rgba(56,189,248,.55); }
+  .add .btn-add { grid-column:1/-1; padding:.85rem; border:0; border-radius:11px; background:linear-gradient(120deg,#0ea5e9,#6366f1);
+                  color:#fff; font-weight:700; font-size:.95rem; cursor:pointer; margin-top:.3rem; }
+  .add .btn-add:hover { box-shadow:0 0 24px rgba(99,102,241,.5); }
+  .hint { color:#5b6b85; font-size:.76rem; margin-top:.6rem; }
+
+  /* ===== Table ===== */
+  .table-wrap { background:rgba(15,21,38,.7); border:1px solid rgba(255,255,255,.08); border-radius:18px; overflow:hidden; }
+  .table-scroll { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; min-width:860px; }
+  th { text-align:left; font-size:.74rem; text-transform:uppercase; letter-spacing:.06em; color:#7c8aa5;
+       padding:.9rem 1rem; border-bottom:1px solid rgba(255,255,255,.08); background:rgba(7,11,20,.5); }
+  td { padding:.85rem 1rem; border-bottom:1px solid rgba(255,255,255,.05); font-size:.9rem; vertical-align:middle; }
+  tr:hover td { background:rgba(56,189,248,.04); }
+  tr:last-child td { border-bottom:0; }
+  .c-nom { font-weight:600; color:#e8ecf5; cursor:pointer; }
+  .c-nom small { display:block; color:#7c8aa5; font-weight:400; font-size:.8rem; }
+  .jours { display:inline-block; font-size:.75rem; font-weight:700; padding:.22rem .6rem; border-radius:999px; }
+  .jours.fraiche { background:rgba(94,234,212,.12); color:#5eead4; border:1px solid rgba(94,234,212,.3); }
+  .jours.moyenne { background:rgba(251,191,36,.12); color:#fcd34d; border:1px solid rgba(251,191,36,.3); }
+  .jours.tardive { background:rgba(248,113,113,.12); color:#f87171; border:1px solid rgba(248,113,113,.3); }
+  select.statut { background:#0b1220; border:1px solid rgba(255,255,255,.14); color:#e8ecf5; border-radius:8px; padding:.4rem .5rem; font-size:.82rem; font-family:inherit; cursor:pointer; }
+  .badge-statut { display:inline-block; font-size:.72rem; font-weight:700; padding:.25rem .6rem; border-radius:999px; margin-right:.35rem; }
+  .chips { display:flex; gap:.35rem; flex-wrap:wrap; }
+  .chip { font-size:.72rem; font-weight:600; padding:.28rem .6rem; border-radius:999px; white-space:nowrap; border:1px solid transparent; }
+  .chip.planifiee { background:rgba(255,255,255,.06); color:#7c8aa5; }
+  .chip.a_envoyer { background:rgba(248,113,113,.14); color:#f87171; border-color:rgba(248,113,113,.45); animation:pulse 1.6s infinite; }
+  .chip.envoyee { background:rgba(251,191,36,.12); color:#fcd34d; border-color:rgba(251,191,36,.3); }
+  .chip.repondu { background:rgba(94,234,212,.12); color:#5eead4; border-color:rgba(94,234,212,.35); }
+  .chip.annulee { background:rgba(255,255,255,.04); color:#4b5a73; text-decoration:line-through; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.55} }
+  .actions { display:flex; gap:.4rem; justify-content:flex-end; }
+  .btn-ico { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); color:#c8d6ea; border-radius:8px;
+             width:32px; height:32px; cursor:pointer; font-size:.9rem; }
+  .btn-ico:hover { background:rgba(56,189,248,.15); color:#7dd3fc; }
+  .btn-ico.danger:hover { background:rgba(248,113,113,.18); color:#f87171; }
+  .vide { text-align:center; color:#5b6b85; padding:3rem 1rem; }
+
+  /* ===== Pipeline (kanban) ===== */
+  .kanban { display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:.9rem; overflow-x:auto; padding-bottom:.5rem; }
+  .col { background:rgba(15,21,38,.6); border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:.85rem; min-height:220px; transition:border-color .15s, background .15s; }
+  .col.drag-over { border-color:rgba(56,189,248,.6); background:rgba(56,189,248,.06); }
+  .col-head { display:flex; align-items:center; gap:.5rem; font-weight:700; font-size:.86rem; color:#dbeafe; margin-bottom:.7rem; }
+  .col-head .dot { width:9px; height:9px; border-radius:50%; }
+  .col-head .cnt { margin-left:auto; background:rgba(255,255,255,.08); color:#9fb0c9; border-radius:999px; font-size:.72rem; padding:.12rem .5rem; }
+  .card { background:#0f1526; border:1px solid rgba(255,255,255,.1); border-radius:12px; padding:.8rem .85rem; margin-bottom:.6rem;
+          cursor:grab; transition:transform .12s, box-shadow .12s; }
+  .card:hover { transform:translateY(-2px); box-shadow:0 8px 22px rgba(0,0,0,.4); border-color:rgba(56,189,248,.35); }
+  .card.dragging { opacity:.45; }
+  .card .c1 { font-weight:600; font-size:.88rem; color:#e8ecf5; }
+  .card .c2 { color:#7c8aa5; font-size:.78rem; margin-top:.15rem; }
+  .card .c3 { display:flex; align-items:center; justify-content:space-between; margin-top:.55rem; }
+  .card .c3 .proch { font-size:.7rem; font-weight:700; padding:.2rem .55rem; border-radius:999px; }
+  .card select { background:#0b1220; border:1px solid rgba(255,255,255,.14); color:#9fb0c9; border-radius:7px; font-size:.72rem; padding:.25rem .35rem; font-family:inherit; }
+
+  /* ===== Modal ===== */
+  .overlay { position:fixed; inset:0; background:rgba(4,6,12,.75); backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; z-index:100; padding:1rem; }
+  .overlay.open { display:flex; }
+  .modal { width:min(620px,100%); max-height:88vh; overflow-y:auto; background:#0d1526; border:1px solid rgba(255,255,255,.12);
+           border-radius:20px; padding:1.8rem; box-shadow:0 30px 80px rgba(0,0,0,.6); }
+  .modal h2 { color:#f1f5fb; font-size:1.25rem; margin-bottom:.25rem; }
+  .modal .m-sub { color:#7c8aa5; font-size:.85rem; margin-bottom:1.2rem; }
+  .modal .close { float:right; background:none; border:none; color:#7c8aa5; font-size:1.2rem; cursor:pointer; }
+  .modal .close:hover { color:#fff; }
+  .etape { border:1px solid rgba(255,255,255,.09); border-radius:14px; padding:1rem 1.1rem; margin-bottom:.8rem; background:rgba(7,11,20,.5); }
+  .etape .e-head { display:flex; align-items:center; gap:.6rem; font-weight:700; font-size:.92rem; color:#dbeafe; margin-bottom:.3rem; }
+  .etape .e-ico { width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:14px; }
+  .etape .e-state { font-size:.8rem; color:#7c8aa5; margin-bottom:.7rem; }
+  .etape .e-btns { display:flex; gap:.5rem; flex-wrap:wrap; }
+  .btn-sm { padding:.5rem .95rem; border-radius:9px; border:0; font-weight:600; font-size:.82rem; cursor:pointer; font-family:inherit; color:#fff; }
+  .btn-cyan { background:linear-gradient(120deg,#0ea5e9,#6366f1); }
+  .btn-cyan:hover { box-shadow:0 0 18px rgba(99,102,241,.5); }
+  .btn-green { background:rgba(94,234,212,.16); color:#5eead4; border:1px solid rgba(94,234,212,.4); }
+  .btn-green:hover { background:rgba(94,234,212,.26); }
+  .btn-red { background:rgba(248,113,113,.14); color:#f87171; border:1px solid rgba(248,113,113,.4); }
+  .btn-red:hover { background:rgba(248,113,113,.24); }
+  .btn-ghost-sm { background:rgba(255,255,255,.07); color:#c8d6ea; border:1px solid rgba(255,255,255,.12); }
+  .btn-ghost-sm:hover { background:rgba(255,255,255,.13); }
+  .etape.done { border-color:rgba(94,234,212,.35); }
+  .etape.cancelled { opacity:.5; }
+
+  /* ===== Aperçu message ===== */
+  .apercu { background:#0b1220; border:1px solid rgba(56,189,248,.25); border-radius:12px; padding:1.1rem 1.2rem; margin-top:1rem; }
+  .apercu .canal { display:inline-block; font-size:.72rem; font-weight:700; padding:.22rem .6rem; border-radius:999px; margin-bottom:.6rem; }
+  .apercu .canal.email { background:rgba(34,211,238,.12); color:#67e8f9; border:1px solid rgba(34,211,238,.3); }
+  .apercu .canal.sms { background:rgba(244,114,182,.12); color:#f9a8d4; border:1px solid rgba(244,114,182,.3); }
+  .apercu .objet { color:#7dd3fc; font-weight:600; font-size:.9rem; margin-bottom:.5rem; }
+  .apercu .corps { white-space:pre-line; color:#c8d6ea; font-size:.9rem; line-height:1.65; }
+  .apercu .bar { display:flex; gap:.5rem; margin-top:1rem; flex-wrap:wrap; }
+
+  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:#0d1526;
+           border:1px solid rgba(94,234,212,.5); color:#5eead4; padding:.8rem 1.4rem; border-radius:12px; font-size:.88rem; font-weight:600;
+           z-index:200; transition:transform .3s; box-shadow:0 12px 40px rgba(0,0,0,.5); }
+  .toast.show { transform:translateX(-50%) translateY(0); }
+
+  .footer-note { text-align:center; color:#4b5a73; font-size:.78rem; margin-top:2.2rem; }
+  .footer-note a { color:#7dd3fc; text-decoration:none; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand"><span class="shield">🛡️</span> Anti-Ghosting <span>· suivi candidats</span></div>
+  <div class="tabs">
+    <button class="tab active" id="tab-dash" onclick="changerVue('dash')">📊 Tableau de bord</button>
+    <button class="tab" id="tab-pipe" onclick="changerVue('pipe')">🛤️ Pipeline</button>
+  </div>
+  <div class="sim">
+    <label for="sim-date">Simuler la date du jour</label>
+    <input type="date" id="sim-date" onchange="changerSimDate()">
+    <button class="btn-today" onclick="remettreAujourdhui()">↺ Aujourd'hui</button>
+    <a class="retour" href="index.html">← Retour au site</a>
+  </div>
+</header>
+
+<main>
+  <!-- Vue Tableau de bord -->
+  <div id="vue-dash">
+
+    <div class="alerte" id="alerte">
+      <div class="ico">📨</div>
+      <div>
+        <b id="alerte-titre">Relances à envoyer aujourd'hui</b>
+        <ul id="alerte-liste"></ul>
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="k-label">Candidats suivis</div><div class="k-val" id="k-candidats">0</div><div class="k-sub" id="k-actifs"></div></div>
+      <div class="kpi"><div class="k-label">Relances à envoyer</div><div class="k-val" id="k-relances">0</div><div class="k-sub">email J+2 · email J+5 · SMS J+9</div></div>
+      <div class="kpi"><div class="k-label">Réponses reçues</div><div class="k-val" id="k-reponses">0</div><div class="k-sub" id="k-reponses-sub"></div></div>
+      <div class="kpi"><div class="k-label">Taux de réponse</div><div class="k-val" id="k-taux">—</div><div class="k-sub">candidats relancés</div></div>
+    </div>
+
+    <div class="add">
+      <h3>➕ Ajouter un candidat</h3>
+      <div class="add-grid">
+        <div><label>Nom du candidat</label><input id="f-nom" placeholder="Ex : Léa Martin"></div>
+        <div><label>Poste proposé</label><input id="f-poste" placeholder="Ex : Développeuse Front-end"></div>
+        <div><label>Date de l'offre</label><input type="date" id="f-date"></div>
+        <div><label>Statut</label>
+          <select id="f-statut">
+            <option value="en_attente">En attente</option>
+            <option value="discussion">En discussion</option>
+            <option value="accepte">Offre acceptée</option>
+            <option value="embauche">Embauché</option>
+            <option value="non_retenu">Non retenu</option>
+          </select>
+        </div>
+        <div><label>Votre entreprise (pour les relances)</label><input id="f-ent" placeholder="Ex : Votre entreprise"></div>
+        <button class="btn-add" onclick="ajouterCandidat()">Ajouter le candidat →</button>
+      </div>
+      <div class="hint">💡 Démo : avancez la date simulée (en haut) pour voir les relances J+2, J+5, J+9 se déclencher automatiquement.</div>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-scroll">
+        <table>
+          <thead><tr>
+            <th>Candidat</th><th>Offre envoyée</th><th>Jours</th><th>Statut</th><th>Relances programmées</th><th style="text-align:right">Actions</th>
+          </tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div class="vide" id="vide" style="display:none">Aucun candidat pour le moment. Ajoutez votre premier candidat ci-dessus. 🚀</div>
+    </div>
+  </div>
+
+  <!-- Vue Pipeline -->
+  <div id="vue-pipe" style="display:none">
+    <div class="kpis" style="margin-bottom:1rem">
+      <div class="kpi"><div class="k-label">En attente</div><div class="k-val" id="p-en_attente" style="font-size:1.3rem">0</div></div>
+      <div class="kpi"><div class="k-label">En discussion</div><div class="k-val" id="p-discussion" style="font-size:1.3rem">0</div></div>
+      <div class="kpi"><div class="k-label">Offre acceptée</div><div class="k-val" id="p-accepte" style="font-size:1.3rem">0</div></div>
+      <div class="kpi"><div class="k-label">Embauché</div><div class="k-val" id="p-embauche" style="font-size:1.3rem;background:linear-gradient(120deg,#5eead4,#38bdf8);-webkit-background-clip:text;background-clip:text;color:transparent">0</div></div>
+      <div class="kpi"><div class="k-label">Non retenu</div><div class="k-val" id="p-non_retenu" style="font-size:1.3rem">0</div></div>
+    </div>
+    <div class="kanban" id="kanban"></div>
+    <div class="hint" style="color:#5b6b85;font-size:.8rem;margin-top:.8rem">🖱️ Glissez-déposez les cartes pour changer le statut — ou utilisez le menu déroulant sur chaque carte.</div>
+  </div>
+
+  <div class="footer-note">Données stockées localement dans votre navigateur (localStorage) — rien ne part sur un serveur. · <a href="index.html">← Retour au site</a></div>
+</main>
+
+<!-- Modal détail candidat -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)fermerModal()">
+  <div class="modal" id="modal">
+    <button class="close" onclick="fermerModal()">✕</button>
+    <h2 id="m-nom"></h2>
+    <div class="m-sub" id="m-sub"></div>
+    <div id="m-etapes"></div>
+  </div>
+</div>
+
+<!-- Modal aperçu message -->
+<div class="overlay" id="overlay-msg" onclick="if(event.target===this)fermerMsg()">
+  <div class="modal">
+    <button class="close" onclick="fermerMsg()">✕</button>
+    <h2 id="msg-titre"></h2>
+    <div class="m-sub" id="msg-sous"></div>
+    <div class="apercu">
+      <span class="canal" id="msg-canal"></span>
+      <div class="objet" id="msg-objet" style="display:none"></div>
+      <div class="corps" id="msg-corps"></div>
+      <div class="bar">
+        <button class="btn-sm btn-cyan" onclick="copierMessage()">📋 Copier le message</button>
+        <button class="btn-sm btn-green" id="msg-marquer" onclick="marquerEnvoye()">✓ Marquer comme envoyée</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================================================================
+   Anti-Ghosting — app de suivi candidats (JS pur, aucune dépendance)
+   Relances automatiques simulées par date :
+     J+2  → email
+     J+5  → email
+     J+9  → SMS
+   ================================================================ */
+'use strict';
+
+const LS_KEY = 'anti_ghosting_v1';
+const ETAPES = [
+  { id:'j2', label:'Email J+2', jour:2, canal:'email' },
+  { id:'j5', label:'Email J+5', jour:5, canal:'email' },
+  { id:'j9', label:'SMS J+9',   jour:9, canal:'sms'   }
+];
+const STATUTS = [
+  { id:'en_attente', label:'En attente',    couleur:'#94a3b8' },
+  { id:'discussion', label:'En discussion', couleur:'#38bdf8' },
+  { id:'accepte',    label:'Offre acceptée',couleur:'#a78bfa' },
+  { id:'embauche',   label:'Embauché',      couleur:'#5eead4' },
+  { id:'non_retenu', label:'Non retenu',    couleur:'#f87171' }
+];
+const STATUTS_FINAUX = ['embauche','non_retenu'];
+const STATUT = id => STATUTS.find(s => s.id === id) || STATUTS[0];
+
+/* Messages de relance — identiques aux templates/ (email-relance-j2.md, email-relance-j5.md, sms-relance-j9.md) */
+const MESSAGES = {
+  j2: {
+    canal:'email',
+    objet:'{{poste}} — on reste en contact',
+    corps:'Bonjour {{prenom}},\n\nSuite à notre offre pour le poste de {{poste}}, nous sommes toujours très intéressés par votre profil et nous attendons votre retour.\n\nAvez-vous eu le temps d\'examiner notre proposition ? Nous restons disponibles pour échanger sur les modalités (salaire, date de début, télétravail) si vous avez des questions.\n\nEn attendant votre réponse, nous gardons le poste ouvert pour vous.\n\nCordialement,\nL\'équipe {{entreprise}}'
+  },
+  j5: {
+    canal:'email',
+    objet:'{{poste}} — votre réponse nous aiderait à avancer',
+    corps:'Bonjour {{prenom}},\n\nNous n\'avons pas eu de nouvelles depuis notre dernière relance au sujet du poste de {{poste}}.\n\nNous souhaitons finaliser ce recrutement cette semaine : êtes-vous toujours disponible pour rejoindre l\'équipe ? Un simple « oui » ou « non » nous suffit, nous nous adaptons à votre décision.\n\nDans tous les cas, merci de votre franchise.\n\nCordialement,\nL\'équipe {{entreprise}}'
+  },
+  j9: {
+    canal:'sms',
+    objet:null,
+    corps:'Bonjour {{prenom}}, c\'est {{entreprise}} au sujet du poste de {{poste}}. Êtes-vous toujours intéressé(e) ? Répondez simplement OUI ou NON — on s\'adapte à votre décision.'
+  }
+};
+
+/* ---------- État ---------- */
+let state = charger();
+if (!state) {
+  state = { candidats: [], entreprise: 'Votre entreprise', simDate: isoAujourdhui(), seed: false };
+}
+if (!state.seed) { seedDemo(); state.seed = true; sauver(); }
+
+function charger(){
+  try { return JSON.parse(localStorage.getItem(LS_KEY)); } catch(e){ return null; }
+}
+function sauver(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+
+function isoAujourdhui(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function uid(){ return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function addJours(iso, n){
+  const d = new Date(iso + 'T12:00:00');
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0,10);
+}
+function diffJours(isoOffre, isoNow){
+  const a = new Date(isoOffre + 'T12:00:00');
+  const b = new Date(isoNow + 'T12:00:00');
+  return Math.round((b - a) / 86400000);
+}
+function fmtDate(iso){
+  const d = new Date(iso + 'T12:00:00');
+  return d.toLocaleDateString('fr-FR', { day:'numeric', month:'short', year:'numeric' });
+}
+function prenomComplet(nom){ return (nom || '').trim(); }
+function prenom(nom){
+  const p = prenomComplet(nom).split(/\s+/)[0] || nom;
+  return p.charAt(0).toUpperCase() + p.slice(1);
+}
+
+/* ---------- Données de démonstration ---------- */
+function seedDemo(){
+  const t = isoAujourdhui();
+  state.candidats = [
+    { id:uid(), nom:'Léa Martin',   poste:'Développeuse Front-end',   offre:addJours(t,-9),  statut:'en_attente', suivis:{ j2:{envoye:true, repondu:false}, j5:{envoye:true, repondu:false}, j9:{envoye:false, repondu:false} } },
+    { id:uid(), nom:'Thomas Bernard',poste:'Commercial B2B',           offre:addJours(t,-5),  statut:'en_attente', suivis:{ j2:{envoye:true, repondu:false}, j5:{envoye:false, repondu:false}, j9:{envoye:false, repondu:false} } },
+    { id:uid(), nom:'Sarah Dupont',  poste:'Assistante de direction',  offre:addJours(t,-1),  statut:'en_attente', suivis:{ j2:{envoye:false, repondu:false}, j5:{envoye:false, repondu:false}, j9:{envoye:false, repondu:false} } },
+    { id:uid(), nom:'Nadia Benali',  poste:'Cheffe de projet',         offre:addJours(t,-14), statut:'discussion', suivis:{ j2:{envoye:true, repondu:true},  j5:{envoye:false, repondu:false}, j9:{envoye:false, repondu:false} } }
+  ];
+}
+
+/* ---------- Logique relances ---------- */
+function etatEtape(c, e){
+  const s = c.suivis[e.id] || { envoye:false, repondu:false };
+  const jours = diffJours(c.offre, state.simDate);
+  const due = jours >= e.jour;
+  const idx = ETAPES.indexOf(e);
+  const final = STATUTS_FINAUX.includes(c.statut);
+  const precedenteRepondue = ETAPES.slice(0, idx).some(pe => (c.suivis[pe.id] || {}).repondu);
+
+  if (s.repondu) return { s, statut:'repondu', jours };
+  if (final || precedenteRepondue) return { s, statut:'annulee', jours };
+  if (!due) return { s, statut:'planifiee', jours };
+  if (!s.envoye) return { s, statut:'a_envoyer', jours };
+  return { s, statut:'envoyee', jours };
+}
+
+function relancesDue(c){
+  return ETAPES.filter(e => etatEtape(c, e).statut === 'a_envoyer');
+}
+function prochaineEtape(c){
+  return ETAPES.find(e => ['planifiee','a_envoyer'].includes(etatEtape(c, e).statut)) || null;
+}
+
+/* ---------- Rendu ---------- */
+function render(){
+  document.getElementById('sim-date').value = state.simDate;
+  document.getElementById('f-ent').value = state.entreprise;
+  renderKpis();
+  renderAlerte();
+  renderTable();
+  renderKanban();
+  renderPie();
+}
+
+function renderKpis(){
+  const cs = state.candidats;
+  const nbRelances = cs.reduce((n, c) => n + relancesDue(c).length, 0);
+  const nbReponses = cs.filter(c => ETAPES.some(e => (c.suivis[e.id] || {}).repondu)).length;
+  const relances = cs.filter(c => ETAPES.some(e => (c.suivis[e.id] || {}).envoye || (c.suivis[e.id] || {}).repondu)).length;
+  const taux = relances ? Math.round(nbReponses / relances * 100) : '—';
+  document.getElementById('k-candidats').textContent = cs.length;
+  document.getElementById('k-actifs').textContent = cs.filter(c => !STATUTS_FINAUX.includes(c.statut)).length + ' en cours';
+  document.getElementById('k-relances').textContent = nbRelances;
+  document.getElementById('k-reponses').textContent = nbReponses;
+  document.getElementById('k-reponses-sub').textContent = nbReponses ? 'via vos relances' : 'aucune pour l\'instant';
+  document.getElementById('k-taux').textContent = taux + (taux !== '—' ? ' %' : '');
+}
+
+function renderAlerte(){
+  const alerte = document.getElementById('alerte');
+  const items = [];
+  state.candidats.forEach(c => {
+    relancesDue(c).forEach(e => {
+      const et = etatEtape(c, e);
+      items.push({ c, e, et });
+    });
+  });
+  if (!items.length){ alerte.style.display = 'none'; return; }
+  alerte.style.display = 'flex';
+  const parJour = {};
+  items.forEach(i => {
+    const j = 'J+' + i.e.jour;
+    parJour[j] = (parJour[j] || 0) + 1;
+  });
+  document.getElementById('alerte-titre').textContent = '📨 ' + items.length + ' relance' + (items.length > 1 ? 's' : '') + ' à envoyer — ' +
+    Object.entries(parJour).map(([j, n]) => j + ' : ' + n).join(' · ');
+  const ul = document.getElementById('alerte-liste');
+  ul.innerHTML = '';
+  items.forEach(i => {
+    const li = document.createElement('li');
+    li.textContent = i.c.nom + ' (' + i.c.poste + ') → ' + i.e.label + ' — ' + i.et.jours + ' jours après l\'offre';
+    li.style.cursor = 'pointer';
+    li.onclick = () => ouvrirDetail(i.c.id);
+    ul.appendChild(li);
+  });
+}
+
+function chipEtape(c, e){
+  const et = etatEtape(c, e);
+  const labels = {
+    planifiee: e.label + ' · J+' + e.jour,
+    a_envoyer: '⚠ ' + e.label + ' à envoyer',
+    envoyee: e.label + ' envoyée',
+    repondu: '✓ ' + e.label + ' répondu',
+    annulee: e.label + ' annulée'
+  };
+  return '<span class="chip ' + et.statut + '">' + labels[et.statut] + '</span>';
+}
+
+function renderTable(){
+  const tbody = document.getElementById('tbody');
+  const vide = document.getElementById('vide');
+  tbody.innerHTML = '';
+  if (!state.candidats.length){ vide.style.display = 'block'; return; }
+  vide.style.display = 'none';
+
+  const tri = [...state.candidats].sort((a, b) => a.offre.localeCompare(b.offre));
+  tri.forEach(c => {
+    const jours = diffJours(c.offre, state.simDate);
+    const clsJ = jours <= 2 ? 'fraiche' : jours <= 5 ? 'moyenne' : 'tardive';
+    const st = STATUT(c.statut);
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td><div class="c-nom" onclick="ouvrirDetail(\'' + c.id + '\')">' + esc(c.nom) + '<small>' + esc(c.poste) + '</small></div></td>' +
+      '<td>' + fmtDate(c.offre) + '</td>' +
+      '<td><span class="jours ' + clsJ + '">J+' + jours + '</span></td>' +
+      '<td><span class="badge-statut" style="background:' + st.couleur + '22;color:' + st.couleur + ';border:1px solid ' + st.couleur + '44">' + st.label + '</span></td>' +
+      '<td><div class="chips">' + ETAPES.map(e => chipEtape(c, e)).join('') + '</div></td>' +
+      '<td><div class="actions">' +
+        '<button class="btn-ico" title="Détail et relances" onclick="ouvrirDetail(\'' + c.id + '\')">👁</button>' +
+        '<button class="btn-ico danger" title="Supprimer" onclick="supprimer(\'' + c.id + '\')">🗑</button>' +
+      '</div></td>';
+    tbody.appendChild(tr);
+  });
+}
+
+/* ---------- Pipeline (kanban) ---------- */
+let dragId = null;
+function renderKanban(){
+  const kanban = document.getElementById('kanban');
+  kanban.innerHTML = '';
+  STATUTS.forEach(st => {
+    const col = document.createElement('div');
+    col.className = 'col';
+    col.dataset.statut = st.id;
+    col.ondragover = e => { e.preventDefault(); col.classList.add('drag-over'); };
+    col.ondragleave = () => col.classList.remove('drag-over');
+    col.ondrop = e => {
+      e.preventDefault(); col.classList.remove('drag-over');
+      if (dragId){ changerStatut(dragId, st.id); dragId = null; }
+    };
+    const cartes = state.candidats.filter(c => c.statut === st.id);
+    col.innerHTML = '<div class="col-head"><span class="dot" style="background:' + st.couleur + '"></span>' + st.label +
+      '<span class="cnt">' + cartes.length + '</span></div>';
+    cartes.forEach(c => {
+      const jours = diffJours(c.offre, state.simDate);
+      const proch = prochaineEtape(c);
+      const etProch = proch ? etatEtape(c, proch) : null;
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.draggable = true;
+      card.dataset.id = c.id;
+      card.ondragstart = e => { dragId = c.id; card.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; };
+      card.ondragend = () => card.classList.remove('dragging');
+      card.innerHTML =
+        '<div class="c1">' + esc(c.nom) + '</div>' +
+        '<div class="c2">' + esc(c.poste) + ' · offre J+' + jours + '</div>' +
+        '<div class="c3">' +
+          (etProch && etProch.statut === 'a_envoyer'
+            ? '<span class="proch" style="background:rgba(248,113,113,.15);color:#f87171;border:1px solid rgba(248,113,113,.45)">⚠ ' + proch.label + ' à envoyer</span>'
+            : etProch
+              ? '<span class="proch" style="background:rgba(255,255,255,.07);color:#7c8aa5">' + proch.label + '</span>'
+              : '<span class="proch" style="background:rgba(94,234,212,.12);color:#5eead4">✓ suivi terminé</span>') +
+          '<select onchange="changerStatut(\'' + c.id + '\', this.value)">' +
+            STATUTS.map(s => '<option value="' + s.id + '"' + (s.id === c.statut ? ' selected' : '') + '>' + s.label + '</option>').join('') +
+          '</select>' +
+        '</div>';
+      card.ondblclick = () => ouvrirDetail(c.id);
+      col.appendChild(card);
+    });
+    kanban.appendChild(col);
+  });
+}
+
+function renderPie(){
+  STATUTS.forEach(st => {
+    const el = document.getElementById('p-' + st.id);
+    if (el) el.textContent = state.candidats.filter(c => c.statut === st.id).length;
+  });
+}
+
+/* ---------- Actions ---------- */
+function changerVue(vue){
+  document.getElementById('tab-dash').classList.toggle('active', vue === 'dash');
+  document.getElementById('tab-pipe').classList.toggle('active', vue === 'pipe');
+  document.getElementById('vue-dash').style.display = vue === 'dash' ? 'block' : 'none';
+  document.getElementById('vue-pipe').style.display = vue === 'pipe' ? 'block' : 'none';
+}
+
+function changerSimDate(){
+  const v = document.getElementById('sim-date').value;
+  if (v){ state.simDate = v; sauver(); render(); }
+}
+function remettreAujourdhui(){
+  state.simDate = isoAujourdhui(); sauver(); render(); toast('Date remise à aujourd\'hui.');
+}
+
+function ajouterCandidat(){
+  const nom = document.getElementById('f-nom').value.trim();
+  const poste = document.getElementById('f-poste').value.trim();
+  let offre = document.getElementById('f-date').value;
+  const statut = document.getElementById('f-statut').value;
+  const ent = document.getElementById('f-ent').value.trim();
+  if (!nom || !poste){ toast('Merci de renseigner le nom et le poste.', true); return; }
+  if (!offre) offre = state.simDate;
+  if (ent) state.entreprise = ent;
+  const c = { id:uid(), nom, poste, offre, statut,
+    suivis:{ j2:{envoye:false, repondu:false}, j5:{envoye:false, repondu:false}, j9:{envoye:false, repondu:false} } };
+  state.candidats.push(c);
+  sauver();
+  document.getElementById('f-nom').value = ''; document.getElementById('f-poste').value = ''; document.getElementById('f-date').value = '';
+  render();
+  toast('✅ ' + nom + ' ajouté(e) — relances programmées (J+2, J+5, J+9).');
+  ouvrirDetail(c.id);
+}
+
+function supprimer(id){
+  const c = state.candidats.find(x => x.id === id);
+  if (!c) return;
+  if (!confirm('Supprimer ' + c.nom + ' du suivi ?')) return;
+  state.candidats = state.candidats.filter(x => x.id !== id);
+  sauver(); render(); toast(c.nom + ' supprimé(e).');
+}
+
+function changerStatut(id, statut){
+  const c = state.candidats.find(x => x.id === id);
+  if (!c) return;
+  c.statut = statut; sauver(); render();
+}
+
+function reinitDemo(){
+  if (!confirm('Réinitialiser la démo (restaurer les candidats d\'exemple) ?')) return;
+  localStorage.removeItem(LS_KEY);
+  state = { candidats: [], entreprise: 'Votre entreprise', simDate: isoAujourdhui(), seed: false };
+  seedDemo(); state.seed = true; sauver(); render();
+  toast('Démo réinitialisée.');
+}
+
+/* ---------- Modal détail ---------- */
+let detailId = null, msgEtapeId = null;
+
+function ouvrirDetail(id){
+  detailId = id;
+  const c = state.candidats.find(x => x.id === id);
+  if (!c) return;
+  const st = STATUT(c.statut);
+  document.getElementById('m-nom').textContent = c.nom;
+  document.getElementById('m-sub').textContent = c.poste + ' · offre envoyée le ' + fmtDate(c.offre) +
+    ' (J+' + diffJours(c.offre, state.simDate) + ') · <span style="color:' + st.couleur + '">' + st.label + '</span>';
+  document.getElementById('m-sub').innerHTML = c.poste + ' · offre envoyée le ' + fmtDate(c.offre) +
+    ' (J+' + diffJours(c.offre, state.simDate) + ') · <span style="color:' + st.couleur + '">' + st.label + '</span>';
+
+  const box = document.getElementById('m-etapes');
+  box.innerHTML = '';
+  ETAPES.forEach(e => {
+    const et = etatEtape(c, e);
+    const div = document.createElement('div');
+    div.className = 'etape' + (et.statut === 'repondu' ? ' done' : '') + (et.statut === 'annulee' ? ' cancelled' : '');
+    const icoBg = e.canal === 'sms' ? 'rgba(244,114,182,.14)' : 'rgba(34,211,238,.14)';
+    const ico = e.canal === 'sms' ? '📱' : '✉️';
+    const etats = {
+      planifiee: 'Programmée — partira dans ' + (e.jour - et.jours) + ' jour(s) (' + fmtDate(addJours(c.offre, e.jour)) + ')',
+      a_envoyer: 'À envoyer aujourd\'hui (' + et.jours + ' jours après l\'offre)',
+      envoyee: 'Envoyée le ' + fmtDate(addJours(c.offre, e.jour)) + ' — en attente de réponse',
+      repondu: '✓ Réponse reçue (J+' + e.jour + ')',
+      annulee: 'Annulée — une réponse a déjà été reçue avant cette étape'
+    };
+    let btns = '';
+    if (et.statut === 'a_envoyer') btns = '<button class="btn-sm btn-cyan" onclick="ouvrirMsg(\'' + c.id + '\',\'' + e.id + '\')">👁 Voir le message</button>';
+    if (et.statut === 'envoyee') btns =
+      '<button class="btn-sm btn-green" onclick="reponse(\'' + c.id + '\',\'' + e.id + '\',true)">✅ Réponse positive</button>' +
+      '<button class="btn-sm btn-red" onclick="reponse(\'' + c.id + '\',\'' + e.id + '\',false)">❌ Réponse négative</button>';
+    div.innerHTML =
+      '<div class="e-head"><span class="e-ico" style="background:' + icoBg + '">' + ico + '</span>' + e.label + '</div>' +
+      '<div class="e-state">' + etats[et.statut] + '</div>' +
+      '<div class="e-btns">' + btns + '</div>';
+    box.appendChild(div);
+  });
+
+  const note = document.createElement('div');
+  note.style.cssText = 'margin-top:1rem;display:flex;gap:.5rem;flex-wrap:wrap;align-items:center';
+  note.innerHTML = '<span style="color:#7c8aa5;font-size:.85rem">Changer le statut :</span>';
+  const sel = document.createElement('select');
+  sel.className = 'statut';
+  sel.innerHTML = STATUTS.map(s => '<option value="' + s.id + '"' + (s.id === c.statut ? ' selected' : '') + '>' + s.label + '</option>').join('');
+  sel.onchange = () => changerStatut(c.id, sel.value);
+  note.appendChild(sel);
+  const btnDel = document.createElement('button');
+  btnDel.className = 'btn-sm btn-red';
+  btnDel.textContent = '🗑 Supprimer';
+  btnDel.onclick = () => { fermerModal(); supprimer(c.id); };
+  note.appendChild(btnDel);
+  box.appendChild(note);
+
+  document.getElementById('overlay').classList.add('open');
+}
+
+function fermerModal(){ document.getElementById('overlay').classList.remove('open'); detailId = null; }
+
+function reponse(id, etapeId, positive){
+  const c = state.candidats.find(x => x.id === id);
+  if (!c) return;
+  c.suivis[etapeId].repondu = true;
+  c.statut = positive ? 'discussion' : 'non_retenu';
+  sauver(); render(); fermerModal();
+  toast(positive
+    ? '🎉 ' + c.nom + ' a répondu positivement — statut : En discussion.'
+    : c.nom + ' a décliné — statut : Non retenu. Relances arrêtées.');
+}
+
+/* ---------- Modal message ---------- */
+function ouvrirMsg(id, etapeId){
+  const c = state.candidats.find(x => x.id === id);
+  if (!c) return;
+  const e = ETAPES.find(x => x.id === etapeId);
+  const tpl = MESSAGES[etapeId];
+  const repl = s => s
+    .replace(/\{\{prenom\}\}/g, prenom(c.nom))
+    .replace(/\{\{poste\}\}/g, c.poste)
+    .replace(/\{\{entreprise\}\}/g, state.entreprise || 'Votre entreprise')
+    .replace(/\{\{nom\}\}/g, c.nom);
+  msgEtapeId = etapeId;
+  document.getElementById('msg-titre').textContent = e.label + ' — ' + c.nom;
+  document.getElementById('msg-sous').textContent = 'Prêt à copier et à envoyer. Le message est personnalisé avec les informations du candidat.';
+  const canal = document.getElementById('msg-canal');
+  canal.textContent = tpl.canal === 'sms' ? '📱 SMS' : '✉️ Email';
+  canal.className = 'canal ' + tpl.canal;
+  const objet = document.getElementById('msg-objet');
+  if (tpl.objet){ objet.style.display = 'block'; objet.textContent = 'Objet : ' + repl(tpl.objet); }
+  else objet.style.display = 'none';
+  document.getElementById('msg-corps').textContent = repl(tpl.corps);
+  document.getElementById('msg-marquer').textContent = '✓ Marquer comme envoyée (' + e.label + ')';
+  document.getElementById('overlay-msg').classList.add('open');
+}
+
+function fermerMsg(){ document.getElementById('overlay-msg').classList.remove('open'); msgEtapeId = null; }
+
+function marquerEnvoye(){
+  if (!detailId || !msgEtapeId) return;
+  const c = state.candidats.find(x => x.id === detailId);
+  if (!c) return;
+  const etapeId = msgEtapeId;
+  const etape = ETAPES.find(e => e.id === etapeId);
+  c.suivis[etapeId].envoye = true;
+  sauver(); render(); fermerMsg();
+  toast('✉️ Relance ' + etape.label + ' marquée comme envoyée.');
+  ouvrirDetail(detailId);
+}
+
+function copierMessage(){
+  const objet = document.getElementById('msg-objet').style.display !== 'none'
+    ? 'Objet : ' + document.getElementById('msg-objet').textContent + '\n\n' : '';
+  const texte = objet + document.getElementById('msg-corps').textContent;
+  const fait = () => toast('📋 Message copié dans le presse-papiers.');
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(texte).then(fait).catch(() => copieFallback(texte, fait));
+  } else copieFallback(texte, fait);
+}
+function copieFallback(texte, fait){
+  const ta = document.createElement('textarea');
+  ta.value = texte; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); fait(); } catch(e){ toast('Copie impossible sur ce navigateur.', true); }
+  document.body.removeChild(ta);
+}
+
+/* ---------- Divers ---------- */
+function esc(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+let toastTimer = null;
+function toast(msg, erreur){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderColor = erreur ? 'rgba(248,113,113,.5)' : 'rgba(94,234,212,.5)';
+  t.style.color = erreur ? '#f87171' : '#5eead4';
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+/* ---------- Init ---------- */
+document.getElementById('f-date').value = state.simDate;
+render();
+</script>
+</body>
+</html>
