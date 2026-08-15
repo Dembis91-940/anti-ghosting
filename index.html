@@ -11,6 +11,22 @@
 <meta property="og:type" content="website">
 <meta property="og:locale" content="fr_FR">
 <meta name="twitter:card" content="summary">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "name": "Anti-Ghosting",
+  "description": "Le suivi candidat automatisé qui envoie vos relances à J+2 (email), J+5 (email) et J+9 (SMS) pour que vos offres aboutissent. Sans ATS, sans Excel.",
+  "offers": {
+    "@type": "AggregateOffer",
+    "priceCurrency": "EUR",
+    "lowPrice": "39",
+    "highPrice": "99",
+    "offerCount": "3",
+    "availability": "https://schema.org/InStock"
+  }
+}
+</script>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family:'Segoe UI', system-ui, -apple-system, sans-serif; background:#070b14; color:#e8ecf5; overflow-x:hidden; }
@@ -128,6 +144,12 @@
   .footer a:hover { text-decoration:underline; }
 
   @media (max-width:700px){ .nav { padding:1rem 1.2rem; } .nav-links { display:flex; align-items:center; } .nav-links a { display:none; } .nav-cta { display:inline-block; margin-left:0; padding:.5rem 1rem; font-size:.82rem; white-space:nowrap; } .logo b { display:none; } .logo { font-size:1rem; } }
+  /* ---------- Révélation au scroll ---------- */
+  .reveal { opacity:0; transform:translateY(26px); transition:opacity .7s ease, transform .7s ease; }
+  .reveal.visible { opacity:1; transform:none; }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity:1; transform:none; transition:none; }
+  }
 </style>
 </head>
 <body>
@@ -166,7 +188,7 @@
 
 <div class="content">
 
-  <section class="stats" style="padding-top:0">
+  <section class="stats reveal" style="padding-top:0">
     <div class="stat"><b>54 %</b><span>des candidats Gen-Z disparaissent après une offre (2026)</span></div>
     <div class="stat"><b>3 relances</b><span>automatiques : email J+2, email J+5, SMS J+9</span></div>
     <div class="stat"><b>2 min</b><span>pour ajouter un candidat et oublier le reste</span></div>
@@ -176,7 +198,7 @@
   <section id="comment">
     <h2 class="sec-title">Un candidat qui ne répond pas, <span class="grad">c'est un recrutement qui coûte</span></h2>
     <p class="sec-sub">Vous avez trouvé le bon profil, envoyé l'offre… et plus rien. Anti-Ghosting prend le relais : il relance à votre place, poliment, au bon moment, jusqu'à obtenir une réponse claire.</p>
-    <div class="steps">
+    <div class="steps reveal">
       <div class="step"><div class="num">1</div><h3>Ajoutez le candidat</h3><p>Nom, poste, date d'offre. Deux minutes chrono, depuis n'importe quel navigateur. Aucun logiciel à installer.</p></div>
       <div class="step"><div class="num">2</div><h3>Les relances se programment seules</h3><p>Email à J+2, email à J+5, SMS à J+9. Chaque message est prêt, personnalisé, copiable en un clic.</p></div>
       <div class="step"><div class="num">3</div><h3>Vous cochez, le pipeline suit</h3><p>Réponse positive, négative, silence : un clic suffit. Vos statuts et vos statistiques se mettent à jour automatiquement.</p></div>
@@ -186,7 +208,7 @@
   <section id="timeline">
     <h2 class="sec-title">Le bon message, <span class="grad">au bon moment</span></h2>
     <p class="sec-sub">Trois relances, trois intensités. Courtoise d'abord, plus directe ensuite, décisive à la fin. Voici exactement ce que reçoit votre candidat.</p>
-    <div class="timeline">
+    <div class="timeline reveal">
       <div class="mail">
         <div class="head"><div class="ico" style="background:rgba(34,211,238,.14)">✉️</div><b>Email — Jour +2</b><span class="tag-j2">J+2</span></div>
         <div class="body"><div class="objet">Objet : {{poste}} — on reste en contact</div>Bonjour {{prenom}},<br><br>Avez-vous eu le temps d'examiner notre offre pour le poste de {{poste}} ? Nous restons disponibles pour échanger sur les modalités si vous avez des questions.<br><br>Cordialement,<br>L'équipe {{entreprise}}</div>
@@ -205,7 +227,7 @@
   <section id="offres">
     <h2 class="sec-title">Un prix simple, <span class="grad">sans engagement</span></h2>
     <p class="sec-sub">Chaque formule inclut les relances automatiques. Seul le volume change. Résiliable à tout moment.</p>
-    <div class="offers">
+    <div class="offers reveal">
       <div class="offer">
         <h3>Starter</h3>
         <div class="pour">Pour le recruteur solo</div>
@@ -244,13 +266,13 @@
         <a href="#contact" data-offre="Cabinet — 99 €/mois">Parler à un conseiller →</a>
       </div>
     </div>
-    <p class="garantie">🛡️ Sans engagement · Première semaine offerte · Vos données restent dans votre navigateur</p>
+    <p class="garantie">🛡️ Sans engagement · Première semaine offerte · Vos données restent dans votre navigateur · Paiement par virement ou lien de paiement sécurisé</p>
   </section>
 
   <section id="contact">
     <h2 class="sec-title">Parlons de <span class="grad">vos recrutements</span></h2>
     <p class="sec-sub">Une question sur les relances, les tarifs, l'intégration avec votre façon de recruter ? Réponse sous 24 h ouvrées.</p>
-    <div class="contact">
+    <div class="contact reveal">
       <label>Votre nom</label>
       <input id="c-nom" placeholder="Prénom Nom">
       <label>Votre email</label>
@@ -431,6 +453,19 @@ function envoyerContact(){
     btn.disabled = false; btn.textContent = 'Envoyer ma demande →';
   });
 }
+</script>
+<script>
+/* Révélation au scroll — progressif, non intrusif */
+(function(){
+  var els = document.querySelectorAll('.reveal');
+  if (!('IntersectionObserver' in window)) { for (var i=0;i<els.length;i++) els[i].classList.add('visible'); return; }
+  var io = new IntersectionObserver(function(entries){
+    for (var j=0;j<entries.length;j++){
+      if (entries[j].isIntersecting || entries[j].boundingClientRect.top < window.innerHeight) { entries[j].target.classList.add('visible'); io.unobserve(entries[j].target); }
+    }
+  }, { threshold:.12, rootMargin:'0px 0px -8% 0px' });
+  for (var k=0;k<els.length;k++) io.observe(els[k]);
+})();
 </script>
 <script src="chatbot-config.js"></script>
 <script src="chatbot.js"></script>
