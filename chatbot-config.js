@@ -1,7 +1,7 @@
 window.CHATBOT_CONFIG = {
   "name": "Anti-Ghosting",
   "subtitle": "Votre assistant anti-fuite de candidats",
-  "accent": "#0ea5e9",
+  "accent": "#FF2E63",
   "welcome": "Bonjour ! 👋 Je suis l'assistant Anti-Ghosting. Relances automatiques à J+2, J+5 et J+9 : je vous explique tout en 30 secondes.",
   "quick": [
     "Comment ça marche ?",
