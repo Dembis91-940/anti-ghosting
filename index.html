@@ -7,9 +7,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Anti-Ghosting — le suivi candidat automatisé qui envoie vos relances à J+2, J+5 et J+9 pour que vos offres aboutissent. Dès 39 €/mois.">
-<title>Anti-Ghosting — 54 % des candidats disparaissent après l'offre. La relance automatique les retient.</title>
+<title>Anti-Ghosting — Relances automatiques qui retiennent vos candidats</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20100%20100%27%3E%3Ctext%20y%3D%27.9em%27%20font-size%3D%2790%27%3E%F0%9F%9A%80%3C%2Ftext%3E%3C%2Fsvg%3E">
-<meta property="og:title" content="Anti-Ghosting — 54 % des candidats disparaissent après l'offre. La relance automatique les retient.">
+<meta property="og:title" content="Anti-Ghosting — Relances automatiques qui retiennent vos candidats">
 <meta property="og:description" content="Anti-Ghosting — le suivi candidat automatisé qui envoie vos relances à J+2, J+5 et J+9 pour que vos offres aboutissent. Dès 39 €/mois.">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="fr_FR">
@@ -286,7 +286,7 @@ input:focus, select:focus, textarea:focus, .champ:focus {
 }
 /* ---------- Extra par site ---------- */
 
-   .sec-title .grad, .grad { background:linear-gradient(120deg,var(--a1),var(--a3)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+   .sec-title .grad, .grad { background:linear-gradient(120deg,var(--fv-a1),var(--fv-a3)); -webkit-background-clip:text; background-clip:text; color:transparent; }
    .tag-j2, .tag-j5, .tag-j9 { font-family:var(--mono); }
    .offer.pop { border-color:rgba(255,46,99,.5); box-shadow:0 0 40px rgba(255,46,99,.2); }
    
@@ -322,7 +322,7 @@ input:focus, select:focus, textarea:focus, .champ:focus {
       <div><span class="badge">🛡️ Nouveau — le suivi candidat qui répond pour vous</span></div>
     </div>
     <div class="layer" data-depth="0.45">
-      <div class="title">Vos candidats ne disparaissent pas. <span style="background:linear-gradient(90deg,#FF2E63,#0284c7);-webkit-background-clip:text;background-clip:text;color:transparent;">Vos relances</span>, si.</div>
+      <h1 class="title">Vos candidats ne disparaissent pas. <span style="background:linear-gradient(90deg,#FF2E63,#0284c7);-webkit-background-clip:text;background-clip:text;color:transparent;">Vos relances</span>, si.</h1>
     </div>
     <div class="layer" data-depth="0.55">
       <div class="subtitle">Anti-Ghosting envoie vos relances au bon moment — email à J+2, email à J+5, SMS à J+9 — pour garder vos candidats en vie jusqu'à l'embauche. Sans ATS, sans Excel, sans y penser.</div>
@@ -503,7 +503,7 @@ input:focus, select:focus, textarea:focus, .champ:focus {
 <script src="chatbot-config.js"></script>
 <script src="chatbot.js"></script>
 <script>
- → formulaire ============ */
+/* ============ CTA offres → formulaire ============ */
 document.querySelectorAll('.offer a[data-offre]').forEach(a => {
   a.addEventListener('click', () => {
     const sel = document.getElementById('c-offre');
